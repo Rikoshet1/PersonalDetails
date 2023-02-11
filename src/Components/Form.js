@@ -14,7 +14,7 @@ export default function Form() {
     const onSubmit = () => {
 
         var excelData = [];
-        var id = 0;
+
 
         let person = {
             firstName: sessionStorage.getItem("firstName"),
@@ -31,66 +31,73 @@ export default function Form() {
         axios.post('https://localhost:7261/api/Person', person)
             .then((response) => {
 
-                //find person id in server in order to send his children
-                if (numOfChildren == 0)
-                    return;
+               
+                if (numOfChildren != 0) {
+                    sendChildren(person, excelData)
+                }
+                else downloadExcel(excelData)
 
-                axios.get('https://localhost:7261/api/Person')
-                    .then((response) => {
-
-                        var people = response.data
-
-                        for (var i = 0; i < people.length; i++) {
-                            if (people[i].tz === person.tz)
-                                id = people[i].id
-                        }
-
-
-                        for (let i = 1; i <= numOfChildren.length; i++) {
-
-                            let child = {
-                                name: sessionStorage.getItem(`child${i}firstName`),
-                                dateOfBirth: sessionStorage.getItem(`child${i}dateOfBirth`),
-                                tz: sessionStorage.getItem(`child${i}tz`),
-                                parentId: id
-                            }
-
-                            excelData.push(child)
-
-                            //send children
-                            axios.post('https://localhost:7261/api/Child', child)
-                                .then(function (response) {
-
-                                    // download excel file
-                                    const fileType =
-                                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8";
-                                    const fileExtension = ".xlsx";
-                                    const fileName = "PersonalDetails"
-
-                                    const ws = XLSX.utils.json_to_sheet(excelData);
-                                    const wb = { Sheets: { data: ws }, SheetNames: ["data"] };
-                                    const excelBuffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
-                                    const data = new Blob([excelBuffer], { type: fileType });
-                                    FileSaver.saveAs(data, fileName + fileExtension);
-                                })
-                                .catch(function (error) {
-                                    console.log(error);
-                                });
-                        }
-                    })
-                    .catch(function (error) {
-                        console.log(error);
-                    });
             })
             .catch(function (error) {
                 console.log(error);
             });
 
-
-
-
     }
 
+    function downloadExcel(excelData) {
+        // download excel file
+        const fileType =
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8";
+        const fileExtension = ".xlsx";
+        const fileName = "PersonalDetails"
+
+        const ws = XLSX.utils.json_to_sheet(excelData);
+        const wb = { Sheets: { data: ws }, SheetNames: ["data"] };
+        const excelBuffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+        const data = new Blob([excelBuffer], { type: fileType });
+        FileSaver.saveAs(data, fileName + fileExtension);
+    }
+
+    function sendChildren(person, excelData) {
+
+         //find person id in server in order to send his children
+        axios.get('https://localhost:7261/api/Person')
+            .then((response) => {
+
+                var people = response.data
+                var id = 0;
+                for (var i = 0; i < people.length; i++) {
+                    if (people[i].tz === person.tz)
+                        id = people[i].id
+                }
+
+
+                for (let i = 1; i <= numOfChildren.length; i++) {
+
+                    let child = {
+                        name: sessionStorage.getItem(`child${i}firstName`),
+                        dateOfBirth: sessionStorage.getItem(`child${i}dateOfBirth`),
+                        tz: sessionStorage.getItem(`child${i}tz`),
+                        parentId: id
+                    }
+
+                    excelData.push(child)
+
+                    //send children
+                    axios.post('https://localhost:7261/api/Child', child)
+                        .then(function (response) {
+
+                            downloadExcel(excelData)
+                        })
+                        .catch(function (error) {
+                            console.log(error);
+                        });
+                }
+            })
+            .catch(function (error) {
+                console.log(error);
+            });
+    }
 
     function initChildren() {
         let number = sessionStorage.getItem("numOfChildren")
