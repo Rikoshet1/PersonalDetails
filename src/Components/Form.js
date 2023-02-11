@@ -26,23 +26,26 @@ export default function Form() {
         }
 
         excelData.push(person)
-       
+
         //post person
         axios.post('https://localhost:7261/api/Person', person)
             .then((response) => {
-               
+
                 //find person id in server in order to send his children
+                if (numOfChildren == 0)
+                    return;
 
                 axios.get('https://localhost:7261/api/Person')
                     .then((response) => {
-                        
+
                         var people = response.data
 
                         for (var i = 0; i < people.length; i++) {
                             if (people[i].tz === person.tz)
                                 id = people[i].id
                         }
-                       
+
+
                         for (let i = 1; i <= numOfChildren.length; i++) {
 
                             let child = {
@@ -54,7 +57,7 @@ export default function Form() {
 
                             excelData.push(child)
 
-                           //send children
+                            //send children
                             axios.post('https://localhost:7261/api/Child', child)
                                 .then(function (response) {
 
@@ -119,7 +122,7 @@ export default function Form() {
 
         <div>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="row g-3" style={{ margin: "100px" }}>
+            <form onSubmit={handleSubmit(onSubmit)} className="row g-3" style={{ margin: "100px" }}>
 
                 <div className="col-md-6">
                     <label className="form-label">שם פרטי</label>
@@ -187,11 +190,11 @@ export default function Form() {
                     </select>
                     {errors.healthFund?.type === 'required' && <p style={{ color: "red" }}>זהו שדה חובה</p>}
                 </div>
-              
+
                 {
                     numOfChildren?.map((c) => <ChildForm key={c} number={c} register={register} errors={errors}></ChildForm>)
                 }
-               
+
                 <input type="submit" value="לשמירת הטופס" class="btn btn-primary" />
             </form>
 
